@@ -4,134 +4,287 @@
   <title>WebRTC RTSP Stream + Camera Controls</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Arial, sans-serif;
       margin: 0;
       padding: 0;
       display: flex;
+      flex-direction: column;
       height: 100vh;
+      background: #f0f4f8;
+    }
+
+    .header {
+      width: 100%;
+      background: #ce1414;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 16px 32px 16px 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      min-height: 60px;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      margin-right: 16px;
+      background: #fff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
+      border: 2px solid #c5d1ee;
+    }
+    .header-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .main-content {
+      display: flex;
+      flex: 1;
+      padding: 36px 8px 8px 8px;
+      gap: 32px;
+      box-sizing: border-box;
+      height: 100%;
     }
     .video-container {
       flex: 2;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #000;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px 0 rgba(40,60,70,0.10);
+      min-width: 320px;
+      min-height: 320px;
     }
     video {
-      width: 90%;
-      max-width: 800px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
+      width: 95%;
+      max-width: 850px;
+      border: 4px solid #ce1414;
+      border-radius: 12px;
+      background: #f4f7fa;
+      margin: 20px 0;
     }
     .controls-container {
-      flex: 1;
-      background: #f5f5f5;
-      padding: 20px;
-      overflow-y: auto;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+      flex: 1.1;
+      background: #f9fafc;
+      padding: 20px 14px 14px 14px;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px 0 rgba(40,60,90,0.10);
+      min-width: 370px;
+      /* overflow-y: auto;  -- no scrolling */
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      height: fit-content;
+      max-height: 99vh;
+    }
+    #statusBox {
+      padding: 10px;
+      background: #eef3fd;
+      border-radius: 7px;
+      margin-bottom: 10px;
+      color: #203660;
+      border-left: 4px solid #ce1414;
+      font-size: 0.98rem;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      column-gap: 18px;
+      row-gap: 12px;
+      width: 100%;
+    }
+    .control-group {
+      background: #ffffffe8;
+      border-radius: 9px;
+      margin-bottom: 3px;
+      box-shadow: 0 1px 6px #dde2f2aa;
+      padding: 10px 10px 8px 10px;
+      min-width: 0;
+      min-height: 0;
     }
     h2 {
-      margin-top: 20px;
+      color: #ce1414;
+      margin-top: 2px;
       margin-bottom: 10px;
+      font-size: 1.09rem;
+      text-align: left;
     }
     .control-row {
-      margin-bottom: 15px;
+      margin-bottom: 7px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 5px;
     }
     label {
       flex: 1;
-      margin-right: 10px;
+      font-size: 0.97rem;
+      margin-right: 6px;
+      color: #23364b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     button {
       padding: 5px 10px;
       border: none;
-      background: #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button.active {
-      background: #4caf50;
-      color: white;
-    }
-    #statusBox {
-      padding: 10px;
-      background: #e9ecef;
+      background: #e7ecf6;
       border-radius: 5px;
-      margin-bottom: 15px;
+      cursor: pointer;
+      transition: background 0.20s, color 0.18s;
+      font-size: 0.98rem;
+    }
+    button.active, button:focus {
+      background: #204080;
+      color: #fff;
+      outline: none;
+    }
+    button:hover:not(.active) {
+      background: #dde9fb;
+      color: #112244;
     }
     input[type="range"], input[type="number"] {
-      margin-right: 5px;
+      margin-right: 4px;
+      max-width: 70px;
+      min-width: 36px;
+      padding: 0;
     }
+    input[type="number"] {
+      width: 48px;
+    }
+    /* For smaller screens: stack columns into one */
+    @media (max-width: 1000px) {
+      .controls-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 700px) {
+      .main-content {
+        flex-direction: column;
+        gap: 16px;
+      }
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+      .controls-container,
+      .video-container {
+        min-width: unset;
+        width: 100%;
+      }
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+      }
+    }
+    .zoom-block {
+  width: 100%;
+  background: #ffffffe8;
+  border-radius: 9px;
+  margin-bottom: 13px;
+  box-shadow: 0 1px 8px #dde2f2b0;
+  padding: 12px 10px 8px 10px;
+}
+.zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+.zoom-row input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.zoom-row input[type="number"] {
+  width: 54px;
+} 
+.zoom-block button {
+  margin-left: 0;
+  min-width: 54px;
+}
+
   </style>
 </head>
 <body>
-  <div class="video-container">
-    <video id="video" autoplay playsinline controls></video>
+  <div class="header">
+    <div class="logo">
+      <img src="/static/airl.jpeg" alt="Logo" width="60px">
+    </div>
+    <span class="header-title">WebRTC RTSP Stream & Camera Controls</span>
   </div>
 
-  <div class="controls-container">
-    <div id="statusBox">
-      <strong>Current Mode:</strong><br>
-      Zoom: <span id="statusZoom">N/A</span><br>
-      Focus: <span id="statusFocus">N/A</span><br>
-      AF Mode: <span id="statusAF">N/A</span><br>
-      ICR Mode: <span id="statusICR">N/A</span>
-    </div>
-
-    <h2>Zoom & Image Controls</h2>
-    <div class="control-row">
-      <label>Camera Zoom</label>
-      <input type="range" id="zoomSlider" min="0" max="1023" value="0" oninput="zoomValue.value=this.value">
-      <input type="number" id="zoomValue" value="0" min="0" max="1023">
+  <div class="main-content">
+      <video id="video" autoplay playsinline controls></video>
+    <div class="controls-container">
+      <div id="statusBox">
+        <strong>Current Mode:</strong><br>
+        Zoom: <span id="statusZoom">N/A</span><br>
+        Focus: <span id="statusFocus">N/A</span><br>
+        AF Mode: <span id="statusAF">N/A</span><br>
+        ICR Mode: <span id="statusICR">N/A</span>
+      </div>
+      <div class="zoom-block">
+    <h2>Camera Zoom</h2>
+    <div class="zoom-row">
+      <input type="range" id="zoomSlider" min="0" max="32256" value="0">
+      <input type="number" id="zoomValue" value="0" min="0" max="32256">
       <button onclick="applyZoom()">Apply</button>
     </div>
-
-    <div class="control-row">
-      <label>Digital Zoom</label>
+    <div style="display: flex; gap: 10px; margin-top: 6px;">
       <button id="digitalZoomBtn" data-category="Zoom" data-label="Digital Zoom"
-              onclick="toggleCategory('Zoom', 'digital_zoom', 'digitalZoomBtn', 'digital_zoom')">Off</button>
-    </div>
-    <div class="control-row">
-      <label>Picture Flip</label>
+            onclick="toggleCategory('Zoom', 'digital_zoom', 'digitalZoomBtn', 'digital_zoom')">Digital Zoom</button>
       <button id="pictureFlipBtn" data-category="Zoom" data-label="Picture Flip"
-              onclick="toggleCategory('Zoom', 'picture_flip', 'pictureFlipBtn', 'picture_flip')">Off</button>
-    </div>
-    <div class="control-row">
-      <label>Mirror Image</label>
+            onclick="toggleCategory('Zoom', 'picture_flip', 'pictureFlipBtn', 'picture_flip')">Picture Flip</button>
       <button id="mirrorBtn" data-category="Zoom" data-label="Mirror Image"
-              onclick="toggleCategory('Zoom', 'mirror_image', 'mirrorBtn', 'mirror_image')">Off</button>
+            onclick="toggleCategory('Zoom', 'mirror_image', 'mirrorBtn', 'mirror_image')">Mirror Image</button>
     </div>
+  </div>
+      <div class="controls-grid">
 
-    <h2>Focus Controls</h2>
-    <div class="control-row"><label>Stop Focus</label><button id="focusStop" data-category="Focus" data-label="Stop Focus" onclick="toggleCategory('Focus', 'stop_focus', 'focusStop', 'focus')">Off</button></div>
-    <div class="control-row"><label>Far (Standard)</label><button id="focusFarStd" data-category="Focus" data-label="Far Standard" onclick="toggleCategory('Focus', 'far_standard', 'focusFarStd', 'focus')">Off</button></div>
-    <div class="control-row"><label>Near (Standard)</label><button id="focusNearStd" data-category="Focus" data-label="Near Standard" onclick="toggleCategory('Focus', 'near_standard', 'focusNearStd', 'focus')">Off</button></div>
-    <div class="control-row"><label>Far (Variable)</label><button id="focusFarVar" data-category="Focus" data-label="Far Variable" onclick="toggleCategory('Focus', 'far_variable', 'focusFarVar', 'focus')">Off</button></div>
-    <div class="control-row"><label>Near (Variable)</label><button id="focusNearVar" data-category="Focus" data-label="Near Variable" onclick="toggleCategory('Focus', 'near_variable', 'focusNearVar', 'focus')">Off</button></div>
-    <div class="control-row"><label>Auto Focus</label><button id="focusAuto" data-category="Focus" data-label="Auto Focus" onclick="toggleCategory('Focus', 'auto_focus', 'focusAuto', 'focus')">Off</button></div>
-    <div class="control-row"><label>Manual Focus</label><button id="focusManual" data-category="Focus" data-label="Manual Focus" onclick="toggleCategory('Focus', 'manual_focus', 'focusManual', 'focus')">Off</button></div>
-    <div class="control-row"><label>Auto/Manual Focus</label><button id="focusAutoManual" data-category="Focus" data-label="Auto/Manual Focus" onclick="toggleCategory('Focus', 'auto_manual_focus', 'focusAutoManual', 'focus')">Off</button></div>
-    <div class="control-row"><label>One Push Trigger</label><button id="focusOnePush" data-category="Focus" data-label="One Push Trigger" onclick="toggleCategory('Focus', 'one_push_trigger', 'focusOnePush', 'focus')">Off</button></div>
-    <div class="control-row"><label>Infinity</label><button id="focusInfinity" data-category="Focus" data-label="Infinity" onclick="toggleCategory('Focus', 'infinity_focus', 'focusInfinity', 'focus')">Off</button></div>
+        <!-- Column 2: Focus -->
+        <div class="control-group">
+          <h2>Focus</h2>
+          <div class="control-row"><label>Stop</label><button id="focusStop" data-category="Focus" data-label="Stop Focus" onclick="toggleCategory('Focus', 'stop_focus', 'focusStop', 'focus')">Off</button></div>
+          <div class="control-row"><label>Far Std</label><button id="focusFarStd" data-category="Focus" data-label="Far Standard" onclick="toggleCategory('Focus', 'far_standard', 'focusFarStd', 'focus')">Off</button></div>
+          <div class="control-row"><label>Near Std</label><button id="focusNearStd" data-category="Focus" data-label="Near Standard" onclick="toggleCategory('Focus', 'near_standard', 'focusNearStd', 'focus')">Off</button></div>
+          <div class="control-row"><label>Far Var</label><button id="focusFarVar" data-category="Focus" data-label="Far Variable" onclick="toggleCategory('Focus', 'far_variable', 'focusFarVar', 'focus')">Off</button></div>
+          <div class="control-row"><label>Near Var</label><button id="focusNearVar" data-category="Focus" data-label="Near Variable" onclick="toggleCategory('Focus', 'near_variable', 'focusNearVar', 'focus')">Off</button></div>
+          <div class="control-row"><label>Auto</label><button id="focusAuto" data-category="Focus" data-label="Auto Focus" onclick="toggleCategory('Focus', 'auto_focus', 'focusAuto', 'focus')">Off</button></div>
+          <div class="control-row"><label>Manual</label><button id="focusManual" data-category="Focus" data-label="Manual Focus" onclick="toggleCategory('Focus', 'manual_focus', 'focusManual', 'focus')">Off</button></div>
+          <div class="control-row"><label>Auto/Man</label><button id="focusAutoManual" data-category="Focus" data-label="Auto/Manual Focus" onclick="toggleCategory('Focus', 'auto_manual_focus', 'focusAutoManual', 'focus')">Off</button></div>
+          <div class="control-row"><label>One Push</label><button id="focusOnePush" data-category="Focus" data-label="One Push Trigger" onclick="toggleCategory('Focus', 'one_push_trigger', 'focusOnePush', 'focus')">Off</button></div>
+          <div class="control-row"><label>Infinity</label><button id="focusInfinity" data-category="Focus" data-label="Infinity" onclick="toggleCategory('Focus', 'infinity_focus', 'focusInfinity', 'focus')">Off</button></div>
+        </div>
 
-    <h2>AF Mode Controls</h2>
-    <div class="control-row"><label>Normal AF Mode</label><button id="afNormal" data-category="AF" data-label="Normal AF" onclick="toggleCategory('AF', 'normal_af_mode', 'afNormal', 'focus')">Off</button></div>
-    <div class="control-row"><label>Interval AF Mode</label><button id="afInterval" data-category="AF" data-label="Interval AF" onclick="toggleCategory('AF', 'interval_af_mode', 'afInterval', 'focus')">Off</button></div>
-    <div class="control-row"><label>Zoom Trigger AF</label><button id="afZoomTrigger" data-category="AF" data-label="Zoom Trigger AF" onclick="toggleCategory('AF', 'zoom_trigger_af', 'afZoomTrigger', 'focus')">Off</button></div>
-
-    <h2>ICR Controls</h2>
-    <div class="control-row"><label>ICR Off</label><button id="icrOff" data-category="ICR" data-label="ICR Off" onclick="toggleCategory('ICR', 'icr_off', 'icrOff', 'icr')">Off</button></div>
-    <div class="control-row"><label>Night Mode</label><button id="icrNight" data-category="ICR" data-label="Night Mode" onclick="toggleCategory('ICR', 'icr_night', 'icrNight', 'icr')">Off</button></div>
-    <div class="control-row"><label>Day Mode</label><button id="icrDay" data-category="ICR" data-label="Day Mode" onclick="toggleCategory('ICR', 'icr_day', 'icrDay', 'icr')">Off</button></div>
-    <div class="control-row"><label>Auto Mode</label><button id="icrAuto" data-category="ICR" data-label="Auto Mode" onclick="toggleCategory('ICR', 'icr_auto', 'icrAuto', 'icr')">Off</button></div>
-    <div class="control-row"><label>Ext-In Mode</label><button id="icrExtIn" data-category="ICR" data-label="Ext-In Mode" onclick="toggleCategory('ICR', 'icr_ext_in', 'icrExtIn', 'icr')">Off</button></div>
-    <div class="control-row"><label>Burst On</label><button id="icrBurstOn" data-category="ICR" data-label="Burst On" onclick="toggleCategory('ICR', 'icr_burst_on', 'icrBurstOn', 'icr')">Off</button></div>
-    <div class="control-row"><label>Burst Off</label><button id="icrBurstOff" data-category="ICR" data-label="Burst Off" onclick="toggleCategory('ICR', 'icr_burst_off', 'icrBurstOff', 'icr')">Off</button></div>
-    <div class="control-row"><label>IR Detection On</label><button id="icrIROn" data-category="ICR" data-label="IR Detection On" onclick="toggleCategory('ICR', 'ir_detect_on', 'icrIROn', 'icr')">Off</button></div>
-    <div class="control-row"><label>IR Detection Off</label><button id="icrIROff" data-category="ICR" data-label="IR Detection Off" onclick="toggleCategory('ICR', 'ir_detect_off', 'icrIROff', 'icr')">Off</button></div>
+        <!-- Column 3: AF & ICR -->
+        <div class="control-group">
+          <h2>AF Modes</h2>
+          <div class="control-row"><label>Normal</label><button id="afNormal" data-category="AF" data-label="Normal AF" onclick="toggleCategory('AF', 'normal_af_mode', 'afNormal', 'focus')">Off</button></div>
+          <div class="control-row"><label>Interval</label><button id="afInterval" data-category="AF" data-label="Interval AF" onclick="toggleCategory('AF', 'interval_af_mode', 'afInterval', 'focus')">Off</button></div>
+          <div class="control-row"><label>Zoom Trigger</label><button id="afZoomTrigger" data-category="AF" data-label="Zoom Trigger AF" onclick="toggleCategory('AF', 'zoom_trigger_af', 'afZoomTrigger', 'focus')">Off</button></div>
+        </div>
+      <div class ="control-group">
+          <h2 style="margin-top:13px;">ICR</h2>
+          <div class="control-row"><label>ICR Off</label><button id="icrOff" data-category="ICR" data-label="ICR Off" onclick="toggleCategory('ICR', 'icr_off', 'icrOff', 'icr')">Off</button></div>
+          <div class="control-row"><label>Night</label><button id="icrNight" data-category="ICR" data-label="Night Mode" onclick="toggleCategory('ICR', 'icr_night', 'icrNight', 'icr')">Off</button></div>
+          <div class="control-row"><label>Day</label><button id="icrDay" data-category="ICR" data-label="Day Mode" onclick="toggleCategory('ICR', 'icr_day', 'icrDay', 'icr')">Off</button></div>
+          <div class="control-row"><label>Auto</label><button id="icrAuto" data-category="ICR" data-label="Auto Mode" onclick="toggleCategory('ICR', 'icr_auto', 'icrAuto', 'icr')">Off</button></div>
+          <div class="control-row"><label>Ext-In</label><button id="icrExtIn" data-category="ICR" data-label="Ext-In Mode" onclick="toggleCategory('ICR', 'icr_ext_in', 'icrExtIn', 'icr')">Off</button></div>
+          <div class="control-row"><label>Burst On</label><button id="icrBurstOn" data-category="ICR" data-label="Burst On" onclick="toggleCategory('ICR', 'icr_burst_on', 'icrBurstOn', 'icr')">Off</button></div>
+          <div class="control-row"><label>Burst Off</label><button id="icrBurstOff" data-category="ICR" data-label="Burst Off" onclick="toggleCategory('ICR', 'icr_burst_off', 'icrBurstOff', 'icr')">Off</button></div>
+          <div class="control-row"><label>IR On</label><button id="icrIROn" data-category="ICR" data-label="IR Detection On" onclick="toggleCategory('ICR', 'ir_detect_on', 'icrIROn', 'icr')">Off</button></div>
+          <div class="control-row"><label>IR Off</label><button id="icrIROff" data-category="ICR" data-label="IR Detection Off" onclick="toggleCategory('ICR', 'ir_detect_off', 'icrIROff', 'icr')">Off</button></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -184,6 +337,14 @@
 
       fetch(`/${endpoint}/${cmd}`, { method: "POST" });
     }
+
+    // Keep slider and input box in sync
+    document.getElementById('zoomSlider').addEventListener('input', function() {
+      document.getElementById('zoomValue').value = this.value;
+    });
+    document.getElementById('zoomValue').addEventListener('input', function() {
+      document.getElementById('zoomSlider').value = this.value;
+    });
 
     startStream();
   </script>

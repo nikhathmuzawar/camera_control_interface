@@ -86,7 +86,13 @@ FOCUS_COMMANDS = {
     "zoom_trigger_af": "81 01 04 57 02 FF"
 }
 
-
+@app.post("/digital_zoom")
+async def set_digital_zoom(request: Request):
+    data = await request.json()
+    on = data["on"]
+    cmd = "81 01 04 06 02 FF" if on else "81 01 04 06 03 FF"
+    resp = send_visca_command(cmd)
+    return {"status": "ok", "resp": resp}
 
 
 @app.post("/focus/{command}")
@@ -101,13 +107,11 @@ async def focus_command(command: str):
 async def set_zoom(request: Request):
     data = await request.json()
     zoom_val = int(data["zoom"])
-    # VISCA Zoom Direct command format: 81 01 04 47 0p 0q 0r 0s FF
     p = (zoom_val >> 12) & 0x0F
     q = (zoom_val >> 8) & 0x0F
     r = (zoom_val >> 4) & 0x0F
     s = zoom_val & 0x0F
 
-    # zero-pad to two characters
     cmd = f"81 01 04 47 0{p:X} 0{q:X} 0{r:X} 0{s:X} FF"
     resp = send_visca_command(cmd)
     return {"status": "ok", "resp": resp}
