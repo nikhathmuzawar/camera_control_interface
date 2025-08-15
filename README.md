@@ -5,3 +5,5 @@
  Install FastAPI and Valkka  
  `pip install fastapi uvicorn`  
  
+To run  
+`python3 main.py`
