@@ -7,7 +7,8 @@ from aiortc.contrib.media import MediaPlayer
 import uvicorn
 from valkka.onvif import OnVif, DeviceManagement
 
-IP = "192.168.144.100"
+
+IP = "192.168.144.100" #camera"s IP
 PORT = 8000
 USER = ""
 PASSWORD = ""
@@ -29,7 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Init ONVIF services
 device_service = DeviceManagement(ip=IP, port=PORT, user=USER, password=PASSWORD)
 deviceIO_service = MyDeviceIO(ip=IP, port=PORT, user=USER, password=PASSWORD)
 deviceio_type_factory = deviceIO_service.zeep_client.type_factory(
@@ -62,14 +62,6 @@ ICR_COMMANDS = {
     "ir_detect_off": "81 01 04 6E 03 FF"
 }
 
-@app.post("/icr/{command}")
-async def icr_command(command: str):
-    if command not in ICR_COMMANDS:
-        return {"status": "error", "message": "Unknown ICR command"}
-    resp = send_visca_command(ICR_COMMANDS[command])
-    return {"status": "ok", "resp": resp}
-
-
 FOCUS_COMMANDS = {
     "stop_focus": "81 01 04 08 00 FF",
     "far_standard": "81 01 04 08 02 FF",
@@ -85,6 +77,13 @@ FOCUS_COMMANDS = {
     "interval_af_mode": "81 01 04 57 01 FF",
     "zoom_trigger_af": "81 01 04 57 02 FF"
 }
+
+@app.post("/icr/{command}")
+async def icr_command(command: str):
+    if command not in ICR_COMMANDS:
+        return {"status": "error", "message": "Unknown ICR command"}
+    resp = send_visca_command(ICR_COMMANDS[command])
+    return {"status": "ok", "resp": resp}
 
 @app.post("/digital_zoom")
 async def set_digital_zoom(request: Request):

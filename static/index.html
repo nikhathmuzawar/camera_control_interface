@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>WebRTC RTSP Stream + Camera Controls</title>
+  <title>Camera Controls</title>
   <style>
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
@@ -218,7 +218,7 @@
     <div class="logo">
       <img src="/static/airl.jpeg" alt="Logo" width="60px">
     </div>
-    <span class="header-title">WebRTC RTSP Stream & Camera Controls</span>
+    <span class="header-title">Harrier 55x AF-Zoom IP Camera</span>
   </div>
 
   <div class="main-content">
@@ -249,7 +249,6 @@
   </div>
       <div class="controls-grid">
 
-        <!-- Column 2: Focus -->
         <div class="control-group">
           <h2>Focus</h2>
           <div class="control-row"><label>Stop</label><button id="focusStop" data-category="Focus" data-label="Stop Focus" onclick="toggleCategory('Focus', 'stop_focus', 'focusStop', 'focus')">Off</button></div>
@@ -264,7 +263,6 @@
           <div class="control-row"><label>Infinity</label><button id="focusInfinity" data-category="Focus" data-label="Infinity" onclick="toggleCategory('Focus', 'infinity_focus', 'focusInfinity', 'focus')">Off</button></div>
         </div>
 
-        <!-- Column 3: AF & ICR -->
         <div class="control-group">
           <h2>AF Modes</h2>
           <div class="control-row"><label>Normal</label><button id="afNormal" data-category="AF" data-label="Normal AF" onclick="toggleCategory('AF', 'normal_af_mode', 'afNormal', 'focus')">Off</button></div>
@@ -288,7 +286,6 @@
   </div>
 
   <script>
-    // --- WebRTC Stream Setup ---
     const pc = new RTCPeerConnection();
     pc.addTransceiver("video", { direction: "recvonly" });
 
@@ -313,7 +310,6 @@
       await pc.setRemoteDescription(answer);
     }
 
-    // --- Camera Control Functions ---
     async function applyZoom() {
       const zoomVal = document.getElementById("zoomValue").value;
       document.getElementById("statusZoom").innerText = `Zoom to ${zoomVal}`;
@@ -338,7 +334,6 @@
       fetch(`/${endpoint}/${cmd}`, { method: "POST" });
     }
 
-    // Keep slider and input box in sync
     document.getElementById('zoomSlider').addEventListener('input', function() {
       document.getElementById('zoomValue').value = this.value;
     });
