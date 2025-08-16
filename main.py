@@ -8,10 +8,17 @@ import uvicorn
 from valkka.onvif import OnVif, DeviceManagement
 
 
-IP = "192.168.144.100" #camera"s IP
-PORT = 8000
+# Global camera settings (user configurable)
+CAMERA_IP = None
+CAMERA_PORT = 8000
 USER = ""
 PASSWORD = ""
+deviceIO_service = None
+deviceio_type_factory = None
+serial_token = None
+RTSP_URL = None
+
+
 
 class MyDeviceIO(OnVif):
     wsdl_file = "https://www.onvif.org/ver10/deviceio.wsdl"
@@ -30,16 +37,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-device_service = DeviceManagement(ip=IP, port=PORT, user=USER, password=PASSWORD)
-deviceIO_service = MyDeviceIO(ip=IP, port=PORT, user=USER, password=PASSWORD)
-deviceio_type_factory = deviceIO_service.zeep_client.type_factory(
-    "http://www.onvif.org/ver10/deviceIO/wsdl"
-)
-ports = deviceIO_service.ws_client.GetSerialPorts()
-serial_token = ports[0].token
-
 
 def send_visca_command(hex_str):
+    if not deviceIO_service or not serial_token:
+        raise RuntimeError("Camera not initialized. Please set the camera IP first.")
     serial_data = deviceio_type_factory.SerialData(Binary=bytes.fromhex(hex_str))
     resp = deviceIO_service.ws_client.SendReceiveSerialCommand(
         Token=serial_token,
@@ -49,6 +50,7 @@ def send_visca_command(hex_str):
         Delimiter="",
     )
     return resp["Binary"].hex()
+
 
 ICR_COMMANDS = {
     "icr_off": "81 01 04 66 03 FF",
@@ -77,6 +79,28 @@ FOCUS_COMMANDS = {
     "interval_af_mode": "81 01 04 57 01 FF",
     "zoom_trigger_af": "81 01 04 57 02 FF"
 }
+
+@app.post("/set_camera")
+async def set_camera(request: Request):
+    global CAMERA_IP, CAMERA_PORT, deviceIO_service, deviceio_type_factory, serial_token, RTSP_URL
+    data = await request.json()
+    CAMERA_IP = data.get("ip")
+    CAMERA_PORT = int(data.get("port", 8000))
+
+    # Build RTSP URL dynamically (adjust stream path if different on your camera)
+    RTSP_URL = f"rtsp://{CAMERA_IP}:8554/quality_h264"
+
+    try:
+        device_service = DeviceManagement(ip=CAMERA_IP, port=CAMERA_PORT, user=USER, password=PASSWORD)
+        deviceIO_service = MyDeviceIO(ip=CAMERA_IP, port=CAMERA_PORT, user=USER, password=PASSWORD)
+        deviceio_type_factory = deviceIO_service.zeep_client.type_factory("http://www.onvif.org/ver10/deviceIO/wsdl")
+        ports = deviceIO_service.ws_client.GetSerialPorts()
+        serial_token = ports[0].token
+        return {"status": "ok", "ip": CAMERA_IP, "port": CAMERA_PORT, "rtsp": RTSP_URL}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 
 @app.post("/icr/{command}")
 async def icr_command(command: str):
@@ -134,7 +158,6 @@ async def set_mirror_image(request: Request):
     return {"status": "ok", "resp": resp}
 
 
-RTSP_URL = "rtsp://192.168.144.100:8554/quality_h264"
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
@@ -143,6 +166,10 @@ async def index():
 
 @app.post("/offer")
 async def offer(request: Request):
+    global RTSP_URL
+    if not RTSP_URL:
+        return {"error": "Camera IP not set. Please configure the camera first."}
+
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     pc = RTCPeerConnection()
@@ -163,6 +190,7 @@ async def offer(request: Request):
         "sdp": pc.localDescription.sdp,
         "type": pc.localDescription.type
     }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host='0.0.0.0', port=8000)

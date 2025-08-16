@@ -231,6 +231,15 @@
         AF Mode: <span id="statusAF">N/A</span><br>
         ICR Mode: <span id="statusICR">N/A</span>
       </div>
+      <h2>Camera Connection</h2>
+<div class="control-row">
+  <label>Camera IP</label>
+  <input type="text" id="cameraIp" placeholder="192.168.x.x" style="flex:1; margin-right:5px;">
+  <input type="number" id="cameraPort" value="8000" min="1" style="width:80px; margin-right:5px;">
+  <button onclick="setCamera()">Apply</button>
+</div>
+<hr>
+
       <div class="zoom-block">
     <h2>Camera Zoom</h2>
     <div class="zoom-row">
@@ -284,6 +293,29 @@
       </div>
     </div>
   </div>
+
+
+  <script>
+  async function setCamera() {
+    const ip = document.getElementById("cameraIp").value;
+    const port = document.getElementById("cameraPort").value;
+    const resp = await fetch("/set_camera", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ ip, port })
+    });
+    const data = await resp.json();
+    if (data.status === "ok") {
+      alert(`Camera set to ${data.ip}:${data.port}\nRTSP: ${data.rtsp}`);
+      startStream(); // restart WebRTC streaming with new IP
+    } else {
+      alert("Error: " + data.message);
+    }
+  }
+</script>
+
+
+
 
   <script>
     const pc = new RTCPeerConnection();
