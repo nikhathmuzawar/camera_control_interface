@@ -6,6 +6,8 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer
 import uvicorn
 from valkka.onvif import OnVif, DeviceManagement
+from datetime import datetime
+
 
 
 # Global camera settings (user configurable)
@@ -193,6 +195,8 @@ async def index():
     with open("static/index.html") as f:
         return f.read()
 
+from aiortc.contrib.media import MediaRecorder
+
 @app.post("/offer")
 async def offer(request: Request):
     global RTSP_URL
@@ -202,6 +206,8 @@ async def offer(request: Request):
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     pc = RTCPeerConnection()
+
+    # Media source (camera stream)
     player = MediaPlayer(RTSP_URL, format="rtsp", options={
         "rtsp_transport": "tcp",
         "fflags": "nobuffer",
@@ -210,15 +216,40 @@ async def offer(request: Request):
         "framedrop": "1",
         "max_delay": "500000"
     })
+
+    # Generate timestamped filename
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"recordings/output_{timestamp}.mp4"
+
+    # Ensure directory exists
+    import os
+    os.makedirs("recordings", exist_ok=True)
+
+    # Recorder for saving the video
+    recorder = MediaRecorder(filename)
+
     if player.video:
         pc.addTrack(player.video)
+        recorder.addTrack(player.video)
+
+    await recorder.start()  # start recording
+
+    # Stop recorder when connection ends
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        if pc.connectionState in ["failed", "closed", "disconnected"]:
+            await recorder.stop()
+
     await pc.setRemoteDescription(offer)
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
+
     return {
         "sdp": pc.localDescription.sdp,
-        "type": pc.localDescription.type
+        "type": pc.localDescription.type,
+        "filename": filename
     }
+
 
 
 if __name__ == "__main__":
