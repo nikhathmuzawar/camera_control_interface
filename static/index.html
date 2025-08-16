@@ -241,11 +241,13 @@
 <hr>
 
       <div class="zoom-block">
-    <h2>Camera Zoom</h2>
-    <div class="zoom-row">
-      <input type="range" id="zoomSlider" min="0" max="32256" value="0">
-      <input type="number" id="zoomValue" value="0" min="0" max="32256">
+      <h2>Camera Zoom</h2>
+      <div class="zoom-row">
+      
+      <input type="range" id="zoomSlider" min="4.25" max="230" step="0.1" value="4.25" oninput="zoomValue.value=this.value">
+      <input type="number" id="zoomValue" value="4.25" min="4.25" max="230" step="0.1">
       <button onclick="applyZoom()">Apply</button>
+      
     </div>
     <div style="display: flex; gap: 10px; margin-top: 6px;">
       <button id="digitalZoomBtn" data-category="Zoom" data-label="Digital Zoom"

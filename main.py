@@ -129,15 +129,25 @@ async def focus_command(command: str):
 @app.post("/zoom")
 async def set_zoom(request: Request):
     data = await request.json()
-    zoom_val = int(data["zoom"])
-    p = (zoom_val >> 12) & 0x0F
-    q = (zoom_val >> 8) & 0x0F
-    r = (zoom_val >> 4) & 0x0F
-    s = zoom_val & 0x0F
+    mag = float(data["zoom"])  # zoom in magnification scale (4.25 – 230)
+
+    # clamp values
+    if mag < 4.25: mag = 4.25
+    if mag > 230: mag = 230
+
+    # scale to VISCA (0–16383)
+    visca_val = int(((mag - 4.25) / (230 - 4.25)) * 16383)
+
+    # split into nibbles
+    p = (visca_val >> 12) & 0x0F
+    q = (visca_val >> 8) & 0x0F
+    r = (visca_val >> 4) & 0x0F
+    s = visca_val & 0x0F
 
     cmd = f"81 01 04 47 0{p:X} 0{q:X} 0{r:X} 0{s:X} FF"
     resp = send_visca_command(cmd)
     return {"status": "ok", "resp": resp}
+
 
 
 @app.post("/picture_flip")
