@@ -265,13 +265,25 @@
           <div class="control-row"><label>Stop</label><button id="focusStop" data-category="Focus" data-label="Stop Focus" onclick="toggleCategory('Focus', 'stop_focus', 'focusStop', 'focus')">Off</button></div>
           <div class="control-row"><label>Far Std</label><button id="focusFarStd" data-category="Focus" data-label="Far Standard" onclick="toggleCategory('Focus', 'far_standard', 'focusFarStd', 'focus')">Off</button></div>
           <div class="control-row"><label>Near Std</label><button id="focusNearStd" data-category="Focus" data-label="Near Standard" onclick="toggleCategory('Focus', 'near_standard', 'focusNearStd', 'focus')">Off</button></div>
-          <div class="control-row"><label>Far Var</label><button id="focusFarVar" data-category="Focus" data-label="Far Variable" onclick="toggleCategory('Focus', 'far_variable', 'focusFarVar', 'focus')">Off</button></div>
-          <div class="control-row"><label>Near Var</label><button id="focusNearVar" data-category="Focus" data-label="Near Variable" onclick="toggleCategory('Focus', 'near_variable', 'focusNearVar', 'focus')">Off</button></div>
           <div class="control-row"><label>Auto</label><button id="focusAuto" data-category="Focus" data-label="Auto Focus" onclick="toggleCategory('Focus', 'auto_focus', 'focusAuto', 'focus')">Off</button></div>
           <div class="control-row"><label>Manual</label><button id="focusManual" data-category="Focus" data-label="Manual Focus" onclick="toggleCategory('Focus', 'manual_focus', 'focusManual', 'focus')">Off</button></div>
           <div class="control-row"><label>Auto/Man</label><button id="focusAutoManual" data-category="Focus" data-label="Auto/Manual Focus" onclick="toggleCategory('Focus', 'auto_manual_focus', 'focusAutoManual', 'focus')">Off</button></div>
           <div class="control-row"><label>One Push</label><button id="focusOnePush" data-category="Focus" data-label="One Push Trigger" onclick="toggleCategory('Focus', 'one_push_trigger', 'focusOnePush', 'focus')">Off</button></div>
           <div class="control-row"><label>Infinity</label><button id="focusInfinity" data-category="Focus" data-label="Infinity" onclick="toggleCategory('Focus', 'infinity_focus', 'focusInfinity', 'focus')">Off</button></div>
+          <div class="control-row">
+  <label>Far Variable Focus</label>
+  <input type="range" id="farVarFocus" min="0" max="7" value="0" oninput="farVarVal.value=this.value">
+  <input type="number" id="farVarVal" min="0" max="7" value="0">
+  <button onclick="applyFarVariable()">Apply</button>
+</div>
+
+<div class="control-row">
+  <label>Near Variable Focus</label>
+  <input type="range" id="nearVarFocus" min="0" max="7" value="0" oninput="nearVarVal.value=this.value">
+  <input type="number" id="nearVarVal" min="0" max="7" value="0">
+  <button onclick="applyNearVariable()">Apply</button>
+</div>
+
         </div>
 
         <div class="control-group">
@@ -316,8 +328,25 @@
   }
 </script>
 
+<script>
+  async function applyFarVariable() {
+    const speed = document.getElementById("farVarVal").value;
+    await fetch("/focus/far_variable", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ speed: parseInt(speed) })
+    });
+  }
 
-
+  async function applyNearVariable() {
+    const speed = document.getElementById("nearVarVal").value;
+    await fetch("/focus/near_variable", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ speed: parseInt(speed) })
+    });
+  }
+</script>
 
   <script>
     const pc = new RTCPeerConnection();

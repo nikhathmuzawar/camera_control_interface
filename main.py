@@ -68,8 +68,8 @@ FOCUS_COMMANDS = {
     "stop_focus": "81 01 04 08 00 FF",
     "far_standard": "81 01 04 08 02 FF",
     "near_standard": "81 01 04 08 03 FF",
-    "far_variable": "81 01 04 08 20 FF",   
-    "near_variable": "81 01 04 08 30 FF",  
+    #"far_variable": "81 01 04 08 20 FF",   
+    #"near_variable": "81 01 04 08 30 FF",  
     "auto_focus": "81 01 04 38 02 FF",
     "manual_focus": "81 01 04 38 03 FF",
     "auto_manual_focus": "81 01 04 38 10 FF",
@@ -100,6 +100,25 @@ async def set_camera(request: Request):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.post("/focus/far_variable")
+async def focus_far_variable(request: Request):
+    data = await request.json()
+    speed = int(data["speed"])
+    if speed < 0: speed = 0
+    if speed > 7: speed = 7
+    cmd = f"81 01 04 08 2{speed:X} FF"
+    resp = send_visca_command(cmd)
+    return {"status": "ok", "resp": resp}
+
+@app.post("/focus/near_variable")
+async def focus_near_variable(request: Request):
+    data = await request.json()
+    speed = int(data["speed"])
+    if speed < 0: speed = 0
+    if speed > 7: speed = 7
+    cmd = f"81 01 04 08 3{speed:X} FF"
+    resp = send_visca_command(cmd)
+    return {"status": "ok", "resp": resp}
 
 
 @app.post("/icr/{command}")
