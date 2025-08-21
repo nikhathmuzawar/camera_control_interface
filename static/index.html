@@ -223,6 +223,7 @@
 
   <div class="main-content">
       <video id="video" autoplay playsinline controls></video>
+
     <div class="controls-container">
       <div id="statusBox">
         <strong>Current Mode:</strong><br>
@@ -231,6 +232,10 @@
         AF Mode: <span id="statusAF">N/A</span><br>
         ICR Mode: <span id="statusICR">N/A</span>
       </div>
+      <div>
+    <button onclick="startRecording()">Start Recording</button>
+    <button onclick="stopRecording()">Stop Recording</button>
+  </div>
       <h2>Camera Connection</h2>
 <div class="control-row">
   <label>Camera IP</label>
@@ -349,6 +354,7 @@
 </script>
 
   <script>
+    const API_BASE = "http://localhost:8000"; 
     const pc = new RTCPeerConnection();
     pc.addTransceiver("video", { direction: "recvonly" });
 
@@ -405,6 +411,20 @@
     });
 
     startStream();
-  </script>
+  
+
+  async function startRecording() {
+      const resp = await fetch(`${API_BASE}/start_recording`, { method: "POST" });
+      const data = await resp.json();
+      statusEl.innerText = data.status + (data.filename ? " → " + data.filename : "");
+    }
+
+    async function stopRecording() {
+      const resp = await fetch(`${API_BASE}/stop_recording`, { method: "POST" });
+      const data = await resp.json();
+      statusEl.innerText = data.status;
+    }
+
+</script>
 </body>
 </html>

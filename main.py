@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer
 import uvicorn
+import os
 from valkka.onvif import OnVif, DeviceManagement
 from datetime import datetime
 
@@ -19,7 +20,9 @@ deviceIO_service = None
 deviceio_type_factory = None
 serial_token = None
 RTSP_URL = None
-
+recorder = None
+pcs = []
+is_recording = False
 
 
 class MyDeviceIO(OnVif):
@@ -197,17 +200,20 @@ async def index():
 
 from aiortc.contrib.media import MediaRecorder
 
+
 @app.post("/offer")
 async def offer(request: Request):
-    global RTSP_URL
+    global RTSP_URL, pcs
+
     if not RTSP_URL:
         return {"error": "Camera IP not set. Please configure the camera first."}
 
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     pc = RTCPeerConnection()
+    pcs.append(pc)
 
-    # Media source (camera stream)
+    # Media source
     player = MediaPlayer(RTSP_URL, format="rtsp", options={
         "rtsp_transport": "tcp",
         "fflags": "nobuffer",
@@ -217,28 +223,13 @@ async def offer(request: Request):
         "max_delay": "500000"
     })
 
-    # Generate timestamped filename
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"recordings/output_{timestamp}.mp4"
-
-    # Ensure directory exists
-    import os
-    os.makedirs("recordings", exist_ok=True)
-
-    # Recorder for saving the video
-    recorder = MediaRecorder(filename)
-
     if player.video:
         pc.addTrack(player.video)
-        recorder.addTrack(player.video)
 
-    await recorder.start()  # start recording
-
-    # Stop recorder when connection ends
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
         if pc.connectionState in ["failed", "closed", "disconnected"]:
-            await recorder.stop()
+            pcs.remove(pc)
 
     await pc.setRemoteDescription(offer)
     answer = await pc.createAnswer()
@@ -247,8 +238,42 @@ async def offer(request: Request):
     return {
         "sdp": pc.localDescription.sdp,
         "type": pc.localDescription.type,
-        "filename": filename
     }
+
+@app.post("/start_recording")
+async def start_recording():
+    global recorder, is_recording
+
+    if recorder and recorder.is_active:  # prevent multiple starts
+        return {"status": "already recording"}
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"recordings/output_{timestamp}.mp4"
+    os.makedirs("recordings", exist_ok=True)
+
+    recorder = MediaRecorder(filename)
+
+    # Add video tracks from all peer connections
+    for pc in pcs:
+        for sender in pc.getSenders():
+            if sender.track:
+                recorder.addTrack(sender.track)
+
+    await recorder.start()
+    is_recording = True
+    return {"status": "recording started", "filename": filename}
+
+
+@app.post("/stop_recording")
+async def stop_recording():
+    global recorder
+
+    if recorder and is_recording:
+        await recorder.stop()
+        recorder = None
+        return {"status": "recording stopped"}
+    else:
+        return {"status": "no active recording"}
 
 
 
